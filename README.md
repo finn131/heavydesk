@@ -29,6 +29,7 @@ Buka `http://localhost:3000`.
 | `NEXT_PUBLIC_SUPABASE_URL` | URL project |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | publik key (client) |
 | `SUPABASE_SERVICE_ROLE_KEY` | service role, SERVER-ONLY (cron/export) |
+| `VERCEL_CRON_SECRET` | bearer token utk protected route (cron) |
 
 ## Akun Demo
 
@@ -43,4 +44,6 @@ Buka `http://localhost:3000`.
 **M1 selesai (Senin, 14 Sep):** scaffold, schema+RLS, auth, isolasi org verified.
 **M2 selesai (Selasa, 15 Sep):** asset CRUD + QR generate/download, scan kamera + fallback manual, app shell.
 
-**Status (Rabu, 16 Sep):** maintenance log + foto (M3) — form + log + next_due auto done; foto nunggu storage bucket (SQL dashboard).
+**Status (Rabu, 16 Sep):** M3 maintenance log + foto **selesai & verified live** — form, transaksi (insert log+photos, next_due auto), riwayat+thumbnail, validasi HM; storage bucket `fotos` + RLS policy dibuat via Dashboard UI (SQL editor ditolak: `postgres` non-owner storage) dan diuji: upload 200, akses anon denied, signed URL berfungsi.
+
+**Evaluasi menyeluruh (Rabu, 16 Sep, `0004_rbac_cleanup`):** RBAC diperketat — CRUD asset & update/delete log hanya admin, operator cuma catat log; foto dibersihkan saat unit dihapus; mark-read notifikasi, halaman `/notifications`, error/not-found boundary, a11y tombol 44px, `lang=id`, batch signed URLs, unit_no unik case-insensitive, constraint `hm >= 0`. Semua verified live.

@@ -30,13 +30,14 @@ Milestone besar: M1 Auth+schema → M2 Asset+QR → M3 Maintenance → M4 Dashbo
 
 **Acceptance:** buat unit → QR tampil → print/nedus PNG. Scan kamera → buka unit ≤3s.
 
-## Rabu, 16 Sep — Maintenance Log + Foto (M3)
+## Rabu, 16 Sep — Maintenance Log + Foto (M3) ✅ SELESAI + EVALUASI
 
 - [x] Form tambah log: jenis, HM, biaya, catatan (mobile-first)
-- [ ] Upload foto → Storage bucket `fotos`, path `{org_id}/{log_id}/{uuid}`
+- [x] Upload foto → Storage bucket `fotos`, path `{org_id}/{log_id}/{uuid}` — bucket/policy dibuat via Dashboard UI (SQL editor nggak bisa: `postgres` non-owner storage) + verified live (upload 200, anon denied, signed URL 200)
 - [x] Transaksi: insert log + photos, update `next_due_hm` & `next_due_date`
 - [x] Riwayat per unit + total biaya, thumbnail foto
 - [x] Validasi: HM mundur dilarang, biaya ≥ 0, required fields
+- [x] Evaluasi menyeluruh (`0004_rbac_cleanup`): RBAC admin/operator, cleanup foto unit dihapus, method notif, a11y, boundaries — **semua verified live**
 
 **Acceptance:** simpan log → total biaya & next_due terupdate otomatis, foto muncul.
 

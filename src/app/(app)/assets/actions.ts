@@ -5,6 +5,19 @@ import { redirect } from "next/navigation";
 import { randomUUID } from "node:crypto";
 import { computeNextDue } from "@/lib/intervals";
 
+async function getProfile(supabase: Awaited<ReturnType<typeof createClient>>) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data } = await supabase
+    .from("profiles")
+    .select("org_id, role")
+    .eq("id", user.id)
+    .single();
+  return data as { org_id: string; role: "admin" | "operator" } | null;
+}
+
 export type AssetFormState = { error?: string };
 
 export async function createAssetAction(_prev: AssetFormState, formData: FormData): Promise<AssetFormState> {
@@ -18,13 +31,9 @@ export async function createAssetAction(_prev: AssetFormState, formData: FormDat
   if (!name || !unitNo) return { error: "Nama dan nomor unit wajib diisi." };
   if (!Number.isFinite(hmInitial) || hmInitial < 0) return { error: "Jam meter awal harus angka ≥ 0." };
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("org_id")
-    .eq("id", (await supabase.auth.getUser()).data.user?.id ?? "")
-    .single();
-
-  if (!profile?.org_id) return { error: "Akun tidak terhubung ke organisasi." };
+  const profile = await getProfile(supabase);
+  if (!profile) return { error: "Sesi berakhir, silakan login ulang." };
+  if (profile.role !== "admin") return { error: "Hanya admin yang bisa menambah unit." };
 
   const { data: asset, error } = await supabase
     .from("assets")
@@ -38,9 +47,34 @@ export async function createAssetAction(_prev: AssetFormState, formData: FormDat
 
 export async function deleteAssetAction(assetId: string) {
   const supabase = await createClient();
+  const profile = await getProfile(supabase);
+  if (!profile) throw new Error("Sesi berakhir, silakan login ulang.");
+  if (profile.role !== "admin") throw new Error("Hanya admin yang bisa menghapus unit.");
+
+  await deleteAssetStorageFiles(supabase, assetId);
+
   const { error } = await supabase.from("assets").delete().eq("id", assetId);
   if (error) throw new Error(error.message);
   redirect("/assets");
+}
+
+async function deleteAssetStorageFiles(supabase: Awaited<ReturnType<typeof createClient>>, assetId: string) {
+  const { data: logs } = await supabase
+    .from("maintenance_logs")
+    .select("id")
+    .eq("asset_id", assetId);
+  const logIds = (logs ?? []).map((l) => l.id);
+  if (logIds.length === 0) return;
+
+  const { data: ph } = await supabase
+    .from("photos")
+    .select("storage_path")
+    .in("log_id", logIds);
+  const paths = (ph ?? []).map((p) => p.storage_path);
+  if (paths.length === 0) return;
+
+  const { error } = await supabase.storage.from("fotos").remove(paths);
+  if (error) console.error("Hapus file foto gagal (orphan sisa):", error.message);
 }
 
 export type LogFormState = { error?: string };

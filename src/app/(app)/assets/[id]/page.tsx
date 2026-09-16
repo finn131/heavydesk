@@ -58,11 +58,11 @@ export default async function AssetDetailPage({ params }: Props) {
   const currentHm = logs.find((l) => l.hm != null)?.hm ?? asset.hm_initial ?? 0;
   const st = dueStatusHm(asset.next_due_date, asset.next_due_hm, currentHm);
 
-  const photoPaths = logs.flatMap((l) => l.photos ?? []);
+  const photoPaths = [...new Set(logs.flatMap((l) => l.photos ?? []).map((p) => p.storage_path))];
   const signed: Record<string, string> = {};
-  for (const p of photoPaths) {
-    const { data } = await supabase.storage.from("fotos").createSignedUrl(p.storage_path, 3600);
-    if (data) signed[p.storage_path] = data.signedUrl;
+  if (photoPaths.length > 0) {
+    const { data } = await supabase.storage.from("fotos").createSignedUrls(photoPaths, 3600);
+    for (const s of data ?? []) if (s.signedUrl && s.path) signed[s.path] = s.signedUrl;
   }
 
   return (
@@ -74,7 +74,7 @@ export default async function AssetDetailPage({ params }: Props) {
         </Link>
         <Link
           href={`/assets/${asset.id}/log/new`}
-          className="flex items-center gap-1 rounded-lg bg-slate-800 px-3 py-2 text-sm font-medium text-white hover:bg-slate-700"
+          className="flex min-h-11 items-center gap-1 rounded-lg bg-slate-800 px-3 text-sm font-medium text-white hover:bg-slate-700"
         >
           <Plus className="h-4 w-4" />
           Catat Servis

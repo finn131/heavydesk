@@ -33,7 +33,7 @@ export default function QRPanel({ assetId, label }: { assetId: string; label: st
       <button
         type="button"
         onClick={download}
-        className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-800 px-3 py-2 text-sm font-medium text-white hover:bg-slate-700"
+        className="flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-800 px-3 text-sm font-medium text-white hover:bg-slate-700"
       >
         <Download className="h-4 w-4" />
         Download QR PNG

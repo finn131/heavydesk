@@ -5,6 +5,7 @@ export const CATEGORIES = [
   "crane",
   "forklift",
   "dump truck",
+  "motor grader",
   "other",
 ] as const;
 

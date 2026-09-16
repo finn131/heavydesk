@@ -95,7 +95,7 @@ export default function ScanPage() {
           <button
             type="button"
             onClick={openManual}
-            className="flex shrink-0 items-center gap-1 rounded-lg bg-slate-800 px-3 py-2 text-sm font-medium text-white hover:bg-slate-700"
+            className="flex min-h-11 shrink-0 items-center gap-1 rounded-lg bg-slate-800 px-3 text-sm font-medium text-white hover:bg-slate-700"
           >
             <ScanSearch className="h-4 w-4" />
             Buka

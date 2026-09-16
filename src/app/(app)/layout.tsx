@@ -56,14 +56,18 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
               <span className="hidden sm:inline">Scan</span>
             </Link>
 
-            <div className="relative ml-1 flex items-center text-slate-500">
+            <Link
+              href="/notifications"
+              className="relative ml-1 flex items-center rounded-lg p-1.5 text-slate-500 hover:bg-slate-100"
+              title="Notifikasi"
+            >
               <Bell className="h-4 w-4" />
               {count ? (
-                <span className="absolute -right-1.5 -top-1.5 rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
+                <span className="absolute -right-1 -top-1 rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
                   {count}
                 </span>
               ) : null}
-            </div>
+            </Link>
 
             <form action={signOutAction}>
               <button

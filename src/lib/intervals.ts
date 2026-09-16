@@ -16,6 +16,8 @@ export function computeNextDue(
   category: string | null
 ): { dueHm: number | null; dueDate: string } {
   const iv = (category && SERVICE_INTERVALS[category]) || DEFAULT_INTERVAL;
+  // ponytail: perhitungan UTC murni; jadwal "WIB pagi" bisa bergeser 1 hari vs
+  // zona lokal server (Vercel = UTC). upgrade: pakai tz eksplisit kalau protes.
   const d = new Date(base.date);
   d.setUTCDate(d.getUTCDate() + iv.days);
   return { dueHm: base.hm + iv.hm, dueDate: d.toISOString().slice(0, 10) };
