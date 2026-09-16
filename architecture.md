@@ -2,17 +2,17 @@
 
 ## 1. Stack
 
-| Layer | Teknologi | Catatan |
+| Layer | Technology | Notes |
 |---|---|---|
 | Frontend | Next.js (App Router) + Tailwind | Mobile-first |
 | Hosting | Vercel (Free Tier) | |
-| DB | Supabase PostgreSQL (Free Tier) | RLS aktif |
+| DB | Supabase PostgreSQL (Free Tier) | RLS enabled |
 | Auth | Supabase Auth (email/password) | |
-| Storage | Supabase Storage | foto maintenance |
-| Cron | Vercel Cron | daily check due |
-| QR | `qrcode` (gen) + `html5-qrcode` (scan) | semua client-side |
+| Storage | Supabase Storage | maintenance photos |
+| Cron | Vercel Cron | daily due check |
+| QR | `qrcode` (gen) + `html5-qrcode` (scan) | all client-side |
 
-## 2. Skema Database
+## 2. Database Schema
 
 ```sql
 organizations (
@@ -34,10 +34,10 @@ assets (
   org_id uuid not null references organizations,
   name text not null,
   unit_no text not null,
-  category text,                      -- excavator/loader/dll
+  category text,                      -- excavator/loader/etc
   hm_initial numeric default 0,
-  next_due_hm numeric,                -- interval+ hm terakhir, null = blm diset
-  next_due_date date,                 -- jadwal servis berikutnya
+  next_due_hm numeric,                -- last interval+ hm, null = not set
+  next_due_date date,                 -- next service schedule
   created_at timestamptz default now()
 )
 
@@ -46,8 +46,8 @@ maintenance_logs (
   asset_id uuid not null references assets on delete cascade,
   org_id uuid not null references organizations,
   log_type text not null check (log_type in ('rutin','perbaikan')),
-  hm numeric,                          -- HM saat servis
-  cost numeric default 0,              -- biaya (Rp)
+  hm numeric,                          -- HM at service
+  cost numeric default 0,              -- cost (IDR)
   notes text,
   author_id uuid references auth.users,
   created_at timestamptz default now()
@@ -63,22 +63,22 @@ photos (
 notifications (
   id uuid pk default gen_random_uuid(),
   org_id uuid not null references organizations,
-  user_id uuid references auth.users,  -- null = broadcast org
+  user_id uuid references auth.users,  -- null = org broadcast
   message text not null,
   read boolean default false,
   created_at timestamptz default now()
 )
 ```
 
-Index:
+Indexes:
 - `assets (org_id)`, `maintenance_logs (asset_id, created_at desc)`, `notifications (user_id, read)`.
 
 ## 3. Row Level Security
 
-Pola: satu kolom `org_id` di tiap tabel parental + `organization_id()` helper.
+Pattern: one `org_id` column on every parent table + `organization_id()` helper.
 
-> **PENTING:** helper WAJIB `security definer`. Tanpa itu, policy `profiles` yang memakai
-> `organization_id()` (yang membaca `profiles`) → infinite recursion → error `54001 stack depth limited`.
+> **IMPORTANT:** the helper MUST be `security definer`. Without it, a `profiles` policy using
+> `organization_id()` (which itself reads `profiles`) → infinite recursion → error `54001 stack depth limited`.
 
 ```sql
 create or replace function public.organization_id() returns uuid
@@ -88,48 +88,48 @@ set search_path = public as $$
   select org_id from public.profiles where id = auth.uid()
 $$;
 
--- contoh policy, ditiru untuk semua tabel
+-- example policy, replicated for every table
 alter table assets enable row level security;
 create policy "org access" on assets
   for all using (org_id = public.organization_id());
 ```
 
-- `photos` di-force lewat app code (cek kepemilikan parent) + policy di Storage bucket `fotos` mengunci path memakai RLS.
-- Service role TIDAK dipakai client, tidak pernah diledakkan ke public.
-- Backend/Edge Function pakai service role HANYA utk cron (insert notifikasi).
+- `photos` is enforced via app code (parent ownership check) + the Storage bucket `fotos` policy locks the path using RLS.
+- Service role is NOT used on the client, never exposed to the public.
+- Backend/Edge Function uses service role ONLY for cron (inserting notifications).
 
-## 4. Alur Data
+## 4. Data Flow
 
 ### 4.1 Generate QR (admin)
 ```
-Admin simpan asset → FE panggil lib qrcode → render <canvas> → tombol download PNG (dpi cukup utk cetak ≥512px)
+Admin saves asset → FE calls qrcode lib → render <canvas> → download PNG button (dpi enough for print ≥512px)
 ```
-QR payload: `${origin}/assets/${assetId}` — plain URL bebas restriksi.
+QR payload: `${origin}/assets/${assetId}` — a plain, unrestricted URL.
 
 ### 4.2 Scan QR (operator)
 ```
-Kamera (html5-qrcode) → decode URL → baca asset_id → navigate /assets/[id]
+Camera (html5-qrcode) → decode URL → read asset_id → navigate /assets/[id]
 ```
-Desktop fallback: input manual / paste asset_id.
+Desktop fallback: manual ID input / paste asset_id.
 
-### 4.3 Catat Maintenance
+### 4.3 Log Maintenance
 ```
 POST log {asset_id, log_type, hm, cost, notes}
-  -> validasi: asset milik org user (RLS menjamin)
-  -> upload foto ke Storage bucket 'fotos' path: {org_id}/{log_id}/{uuid}.jpg
-  -> insert log + photos (1 transaksi)
+  -> validate: asset belongs to user's org (guaranteed by RLS)
+  -> upload photos to Storage bucket 'fotos' path: {org_id}/{log_id}/{uuid}.jpg
+  -> insert log + photos (1 transaction)
   -> update assets.next_due_hm = log.hm + interval
-            assets.next_due_date = interval date terakhir
+            assets.next_due_date = last interval date
 ```
-Interval disimpan sebagai konstanta per kategori di code (MVP) — `ponytail: konstanta JS, jadikan per-asset setting kalau user minta`.
+Interval is stored as per-category constants in code (MVP) — `ponytail: JS constants, make per-asset setting if requested`.
 
 ### 4.4 Cron Reminder (Vercel Cron, daily 07:00 WIB)
 ```
-GET /api/cron/due (protected bearer token, VERCEL_CRON_SECRET)
-  -> query assets where next_due_date <= now()+3days / next_due_hm melebihi cap
+GET /api/cron/due (protected by bearer token, VERCEL_CRON_SECRET)
+  -> query assets where next_due_date <= now()+3days / next_due_hm over cap
   -> upsert notifications (org_id = asset.org_id)
 ```
-Endpoint berjalan di server runtime (pakai service role, HANYA di sini). Idempotent: skip kalau notif duplikat hari yg sama.
+Endpoint runs on server runtime (uses service role, ONLY here). Idempotent: skip if a dupe notification for the same day already exists.
 
 ### 4.5 Export CSV
 ```
@@ -137,7 +137,7 @@ GET /api/assets/[id]/export.csv
   -> server-side query logs (authorized)
   -> build CSV string, header Content-Type text/csv + Content-Disposition attachment
 ```
-Kolom: tanggal, jenis, HM, biaya, catatan. Total di baris terakhir.
+Columns: date, type, HM, cost, notes. Total on last row.
 
 ## 5. Folder Structure
 
@@ -152,7 +152,7 @@ fleet-maintenance/
     ├── (dashboard)/
     │   ├── dashboard             # fleet view
     │   ├── assets/               # list
-    │   ├── assets/[id]/          # detail + riwayat + QR
+    │   ├── assets/[id]/          # detail + history + QR
     │   ├── assets/new
     │   └── scan/
     ├── api/
@@ -163,16 +163,16 @@ fleet-maintenance/
     └── supabase/migrations/
 ```
 
-## 6. Keamanan & Edge Cases
+## 6. Security & Edge Cases
 
-- Foto: Path traversal dicegah — pakai id uuid, tidak pernah nama user.
-- Log cost: numerik ≥ 0; HM tidak boleh mundur < HM tersimpan.
-- Concurrency: last-write-wins utk `next_due` (MVP cukup — `ponytail: row version kalau baku-saing log rame`).
-- Server actions vs route handler: pakai route handler utk hal berfile (upload, export), server action utk CRUD ringan.
+- Photos: path traversal prevented — uses uuid ids, never user names.
+- Log cost: numeric ≥ 0; HM must not go backward below stored HM.
+- Concurrency: last-write-wins for `next_due` (fine for MVP — `ponytail: row version if log contention gets heavy`).
+- Server actions vs route handlers: route handlers for file handles (upload, export), server actions for light CRUD.
 - Env: `NEXT_PUBLIC_SUPABASE_URL/ANON_KEY` (client-safe), `SUPABASE_SERVICE_ROLE_KEY` (server-only, cron/export), `VERCEL_CRON_SECRET`.
 
 ## 7. Deployment
 
-- Vercel: monorepo root tanpa folder `Project/` — ini masalah; pindah/symlink saat mau deploy (catatan di roadmap Jumat).
-- Supabase: 1 project, sql migration via `supabase/migrations`, RLS aktif sebelum seed.
-- Vercel Cron: config `vercel.json` cron expression daily, hits `/api/cron/due`.
+- Vercel: monorepo root has no `Project/` folder — this is a problem; move/symlink when deploying (note in Friday's roadmap).
+- Supabase: 1 project, SQL migration via `supabase/migrations`, RLS enabled before seed.
+- Vercel Cron: `vercel.json` cron config, daily expression, hits `/api/cron/due`.

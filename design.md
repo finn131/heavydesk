@@ -1,15 +1,15 @@
 # Design — HeavyDesk (Fleet Maintenance Log)
 
-## 1. Prinsip
+## 1. Principles
 
-- **Mobile-first**: operator pakai HP di lapangan. Target layar ≥ 375px, no horizontal scroll.
-- **Satu aksi per layar inti**: catat maintenance = form pendek, bukan wizard.
-- **Statistik > kosmetik**: dashboard maybe pakai angka besar + warna status (vibe glassmorphism presensidev, dikurangi).
-- **Status = makna warna**:
-  - Hijau ➜ aman (`next_due -- >= 7 hari`)
-  - Kuning ➜ mau due (≤ 7 hari)
-  - Merah ➜ overdue / already melewati
-  - Abu ➜ belum ada jadwal
+- **Mobile-first**: operators use phones in the field. Target screens ≥ 375px, no horizontal scroll.
+- **One action per core screen**: logging maintenance = a short form, not a wizard.
+- **Statistics over cosmetics**: dashboard favors big numbers + status colors (presensidev-style glassmorphism, toned down).
+- **Status = meaning by color**:
+  - Green ➜ safe (`next_due -- >= 7 days`)
+  - Yellow ➜ approaching due (≤ 7 days)
+  - Red ➜ overdue / already passed
+  - Gray ➜ no schedule yet
 
 ## 2. Sitemap
 
@@ -18,9 +18,9 @@
 ├── /dashboard
 │   ├── /assets
 │   │   ├── /assets/new
-│   │   └── /assets/[id]      # detail, QR, riwayat
+│   │   └── /assets/[id]      # detail, QR, history
 │   └── /scan
-└── /notifications           # badge di header
+└── /notifications           # badge in header
 ```
 
 ## 3. Wireframe (ASCII)
@@ -42,46 +42,46 @@
 │ HeavyDesk      🔔 (3)  👤 │
 │                          │
 │  ◐ 12 Unit · ● 2 Overdue │
-│  Σ biaya bln ini Rp 4,2jt │
+│  Σ cost this mo Rp 4.2m  │
 │                          │
-│ [Tab: Semua|Due|Overdue] │
+│ [Tab: All|Due|Overdue]   │
 │ ┌──────────────────────┐ │
-│ │ EX-01  ● 2 hari      │ │  ← merah overdue
-│ │  biaya Rp 850rb      │ │
+│ │ EX-01  ● 2 days      │ │  ← red overdue
+│ │  cost Rp 850k        │ │
 │ ├──────────────────────┤ │
-│ │ LO-07  ◐ 5 hari      │ │  ← kuning menjelang due
-│ │  biaya Rp 120rb      │ │
+│ │ LO-07  ◐ 5 days      │ │  ← yellow approaching
+│ │  cost Rp 120k        │ │
 │ ├──────────────────────┤ │
-│ │ CR-11  ● ok          │ │  ← hijau
-│ │  biaya Rp 2,1jt      │ │
+│ │ CR-11  ● ok          │ │  ← green
+│ │  cost Rp 2.1m        │ │
 │ └──────────────────────┘ │
 │  [+ Unit]   [Scan]       │
 └──────────────────────────┘
 ```
 
-### 3.3 Daftar Asset / Detail Unit
+### 3.3 Asset List / Unit Detail
 ```
 list: ┌──────────────────────┐
       │ 📷 EX-01 Excavator   │
-      │    8.420 HM · due 3h│
-      │  [QR]  [Riwayat]     │
+      │    8,420 HM · due 3h│
+      │  [QR]  [History]     │
       └──────────────────────┘
 
 detail (mobile):
 ┌──────────────────────────┐
 │ ← EX-01        [QR]  ✎   │
-│ Kategori : Excavator     │
-│ HM awal  : 8.100         │
-│ Next due : 8.500 ● (3h)  │
+│ Category : Excavator     │
+│ Init HM  : 8,100         │
+│ Next due : 8,500 ● (3h)  │
 │──────────────────────────│
-│ TAMBAH LOG      [+ FOTO] │
+│ ADD LOG          [+ PHOTO]│
 │──────────────────────────│
-│ 🔍 log rutin · 8.210 HM  │
-│    Rp 450rb · 12/09      │
-│ 🔧 log perbaikan · 8.150 │
-│    Rp 1,2jt · 02/09      │
+│ 🔍 routine · 8,210 HM    │
+│    Rp 450k · 12/09       │
+│ 🔧 repair · 8,150 HM     │
+│    Rp 1.2m · 02/09       │
 │──────────────────────────│
-│ Total biaya: Rp 1,65jt   │
+│ Total cost: Rp 1.65m     │
 │ [Export CSV]             │
 └──────────────────────────┘
 ```
@@ -90,63 +90,63 @@ detail (mobile):
 ```
 generate (admin):       scan (operator):
 ┌────────────────────┐  ┌────────────────┐
-│ QR Code EX-01      │  │ [kamera feed ] │
-│   ▛▀▀▀▀▀■▀■▀▀▀▀▜   │  │  arahkan ke   │
-│   ▀■▀■▀▀▀▀▀■▀▀■▀   │  │  QR unit      │
+│ QR Code EX-01      │  │ [camera feed ] │
+│   ▛▀▀▀▀▀■▀■▀▀▀▀▜   │  │  point at the  │
+│   ▀■▀■▀▀▀▀▀■▀▀■▀   │  │  unit's QR     │
 │   ...              │  │ ────────────── │
-│ [⬇ Download PNG]  │  │ or ketik ID:   │
-└────────────────────┘  │ [______][Cari]│
+│ [⬇ Download PNG]  │  │ or type ID:    │
+└────────────────────┘  │ [______][Find] │
                         └────────────────┘
 ```
 
-### 3.5 Form Tambah Maintenance
+### 3.5 Add Maintenance Form
 ```
 ┌──────────────────────────┐
-│ ← EX-01 · Log baru       │
-│ Jenis    : (•) Rutin     │
-│           ( ) Perbaikan  │
-│ HM       : [8_210]       │
-│ Biaya Rp : [450_000]     │
-│ Catatan  : [ganti selang │
-│            hidrolik     ]│
+│ ← EX-01 · New log        │
+│ Type   : (•) Routine     │
+│           ( ) Repair     │
+│ HM      : [8,210]        │
+│ Cost Rp: [450,000]       │
+│ Notes   : [replaced      │
+│           hydraulic hose]│
 │                        │ │
-│ Foto  [+] 📷 (opsional)  │
-│ [ Simpan Log ]           │
+│ Photo [+] 📷 (optional)  │
+│ [ Save Log ]             │
 └──────────────────────────┘
 ```
-Flow submit: validasi → upload foto → simpan → redirect ke detail unit dengan toast "Log tersimpan · next due 8.500 HM".
+Submit flow: validate → upload photos → save → redirect to unit detail with toast "Log saved · next due 8,500 HM".
 
-### 3.6 Notifikasi
+### 3.6 Notifications
 ```
 ┌──────────────────────────┐
-│ 🔔 Notifikasi            │
-│ ● EX-01 overdue 2 hari   │  12/09
-│ ◐ LO-07 due dalam 3 hari │  12/09
-│ ✓ CR-11 diupdate         │  11/09
+│ 🔔 Notifications         │
+│ ● EX-01 overdue 2 days   │  12/09
+│ ◐ LO-07 due in 3 days    │  12/09
+│ ✓ CR-11 updated          │  11/09
 └──────────────────────────┘
 ```
 
-## 4. Flow Utama
+## 4. Main Flow
 
 ```
 Register/Login
-  → (admin) Dashboard → +Unit → isi → QR muncul → cetak/attach ke unit
-  → (operator) Scan → detail unit → Tambah Log → foto → Simpan
-  → Sistem update next_due → dashboard warna berubah → cron notice
+  → (admin) Dashboard → +Unit → fill → QR appears → print/attach to unit
+  → (operator) Scan → unit detail → Add Log → photo → Save
+  → System updates next_due → dashboard colors change → cron notice
 ```
 
-## 5. Tone Visual
+## 5. Visual Tone
 
-- Basis: Tailwind, glassmorphism lembut (nyontek presensidev) tapi data-dense, background abu muda, aksen biru/slate.
-- Tipe: system stack + tabular-nums untuk angka biaya/HM.
-- States: focus ring jelas (accessibility), label form selalu visible (bukan cuma placeholder).
-- Layar scan: full-viewport camera, tombol toggle light, pesan error saat QR tak dikenal.
-- Export/download & QR: selalu ada feedback sukses (toast).
+- Base: Tailwind, soft glassmorphism (borrowed from presensidev) but data-dense, light gray background, blue/slate accents.
+- Type: system stack + tabular-nums for cost/HM numbers.
+- States: clear focus ring (accessibility), form labels always visible (not just placeholders).
+- Scan screen: full-viewport camera, light-toggle button, error message for unknown QR.
+- Export/download & QR: always a success feedback (toast).
 
-## 6. Accessible / Usability Checklist
+## 6. Accessibility / Usability Checklist
 
-- Contrast AA (teks di atas background status bisa dibaca — pakai teks ikon/status, bukan warna doang).
-- Tombol minimal 44px height (jempol di HP).
-- Form: label + error inline, angka format `Rp 1.200.000` & `8.500 HM`.
-- Scan: minta izin kamera dgn penjelasan kenapa.
-- Riwayat & dashboard: format tanggal jelas (23 Sep 2026), bukan `2026-09-23T...`.
+- Contrast AA (status text legible on colored backgrounds — use icon/status text, not color alone).
+- Buttons at least 44px tall (thumbs on phones).
+- Forms: label + inline error, number format `Rp 1.200.000` & `8.500 HM`.
+- Scan: ask camera permission with an explanation of why.
+- History & dashboard: clear date format (23 Sep 2026), not `2026-09-23T...`.

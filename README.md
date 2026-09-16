@@ -1,49 +1,49 @@
-# HeavyDesk — Fleet / Asset Maintenance (Rental Alat Berat)
+# HeavyDesk — Fleet / Asset Maintenance (Heavy Equipment Rental)
 
-Sistem pencatatan maintenance unit alat berat: QR per unit, log servis (jam meter/HM), dashboard biaya, reminder, export CSV. B2B multi-tenant, mobile-first.
+Maintenance logging system for heavy equipment units: per-unit QR codes, service logs (hour meter / HM), cost dashboard, reminders, CSV export. B2B multi-tenant, mobile-first.
 
 ## Stack
 
 - **Next.js 16** (App Router, TS, Tailwind 4) — Vercel
 - **Supabase** (Postgres + RLS, Auth, Storage) — Cloud Free Tier
-- QR: `qrcode` (gen) + `html5-qrcode` (scan)
+- QR: `qrcode` (generate) + `html5-qrcode` (scan)
 
-## Roadmap
+## Docs
 
-PRD, arsitektur, desain, dan timeline ada di `PRD.md`, `architecture.md`, `design.md`, `roadmap.md`.
+PRD, architecture, design, and timeline live in `PRD.md`, `architecture.md`, `design.md`, `roadmap.md`.
 
-## Cara Run
+## Getting Started
 
 ```bash
 npm install
-cp .env.example .env.local   # isi keys (lihat Supabase dashboard)
+cp .env.example .env.local   # fill in keys (see Supabase dashboard)
 npm run dev
 ```
 
-Buka `http://localhost:3000`.
+Open `http://localhost:3000`.
 
 ## ENV
 
-| Key | Keterangan |
+| Key | Description |
 |---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | URL project |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | publik key (client) |
-| `SUPABASE_SERVICE_ROLE_KEY` | service role, SERVER-ONLY (cron/export) |
-| `VERCEL_CRON_SECRET` | bearer token utk protected route (cron) |
+| `NEXT_PUBLIC_SUPABASE_URL` | Project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public key (client) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role, SERVER-ONLY (cron/export) |
+| `VERCEL_CRON_SECRET` | Bearer guard for the cron endpoint |
 
-## Akun Demo
+## Demo Accounts
 
-| Email | Password | Akses |
+| Email | Password | Access |
 |---|---|---|
-| `admin@demo.fleet.app` | `demoFleet@2026` | Admin org **Demo Rental A** (3 unit, 2 log) |
+| `admin@demo.fleet.app` | `demoFleet@2026` | Admin of **Demo Rental A** org (3 units, 2 logs) |
 
-> Register bebas = self-serve: user baru dapat org sendiri + jadi admin.
+> Free registration = self-serve: new user gets own org + becomes admin.
 
 ## Status
 
-**M1 selesai (Senin, 14 Sep):** scaffold, schema+RLS, auth, isolasi org verified.
-**M2 selesai (Selasa, 15 Sep):** asset CRUD + QR generate/download, scan kamera + fallback manual, app shell.
+**M1 done (Mon, Sep 14):** scaffold, schema+RLS, auth, org isolation verified.
+**M2 done (Tue, Sep 15):** asset CRUD + QR generate/download, camera scan + manual fallback, app shell.
 
-**Status (Rabu, 16 Sep):** M3 maintenance log + foto **selesai & verified live** — form, transaksi (insert log+photos, next_due auto), riwayat+thumbnail, validasi HM; storage bucket `fotos` + RLS policy dibuat via Dashboard UI (SQL editor ditolak: `postgres` non-owner storage) dan diuji: upload 200, akses anon denied, signed URL berfungsi.
+**Status (Wed, Sep 16):** M3 maintenance log + photos **done & verified live** — form, transaction (insert log+photos, auto `next_due`), history+thumbnails, HM validation; storage bucket `fotos` + RLS policy created via Dashboard UI (SQL editor rejected: `postgres` non-owner of storage) and tested: upload 200, anon access denied, signed URLs working.
 
-**Evaluasi menyeluruh (Rabu, 16 Sep, `0004_rbac_cleanup`):** RBAC diperketat — CRUD asset & update/delete log hanya admin, operator cuma catat log; foto dibersihkan saat unit dihapus; mark-read notifikasi, halaman `/notifications`, error/not-found boundary, a11y tombol 44px, `lang=id`, batch signed URLs, unit_no unik case-insensitive, constraint `hm >= 0`. Semua verified live.
+**Comprehensive evaluation (Wed, Sep 16, `0004_rbac_cleanup`):** tightened RBAC — asset CRUD & log update/delete admin-only, operators can only log; photos cleaned up on unit delete; notification mark-read, `/notifications` page, error/not-found boundaries, 44px button a11y, `lang=id`, batched signed URLs, case-insensitive unique `unit_no`, `hm >= 0` constraint. All verified live.

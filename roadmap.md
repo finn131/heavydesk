@@ -1,79 +1,78 @@
 # Roadmap — Fleet Maintenance Log
 
-**Deadline:** Jumat, 18 Sep 2026 (demo-ready, deploy Vercel).
-**Prinsip:** tiap hari = milestone yang jalan & bisa dipakai. Bukan nunggu akhir minggu.
+**Deadline:** Fri, Sep 18, 2026 (demo-ready, deployed to Vercel).
+**Principle:** every day delivers a working milestone. Not waiting for end-of-week.
 
-Milestone besar: M1 Auth+schema → M2 Asset+QR → M3 Maintenance → M4 Dashboard+notif → M5 Export+deploy.
+Major milestones: M1 Auth+schema → M2 Asset+QR → M3 Maintenance → M4 Dashboard+notif → M5 Export+deploy.
 
 ---
 
-## Senin, 14 Sep — Setup, Auth, Schema (M1) ✅ SELESAI
+## Mon, Sep 14 — Setup, Auth, Schema (M1) ✅ DONE
 
-- [x] `npx create-next-app@latest` di `Project/fleet-maintenance` (TS, Tailwind, App Router) — **Next 16.3.5**
-- [x] Install: `@supabase/supabase-js`, `qrcode`, `html5-qrcode`
-- [x] Supabase project + SQL migration: 6 tabel, RLS, helper `organization_id()` — **fix recursion → `security definer`**
-- [x] Auth: login/register page, route guard — **Next 16 = `proxy.ts` (bukan middleware)**
-- [x] Role flow: register self-serve → org baru + admin; seed data dummy (2 org, 4 unit, 3 log)
-- [x] Verifikasi cross-org live: user A (org demo) lihat 3 unit, user B (org lain) lihat 0 unit
+- [x] `npx create-next-app@latest` in `Project/fleet-maintenance` (TS, Tailwind, App Router) — **Next 16.3.5**
+- [x] Installed: `@supabase/supabase-js`, `qrcode`, `html5-qrcode`
+- [x] Supabase project + SQL migration: 6 tables, RLS, `organization_id()` helper — **fixed recursion → `security definer`**
+- [x] Auth: login/register pages, route guard — **Next 16 = `proxy.ts` (not middleware)**
+- [x] Role flow: self-serve registration → new org + admin; seeded dummy data (2 orgs, 4 units, 3 logs)
+- [x] Cross-org live verification: user A (demo org) sees 3 units, user B (other org) sees 0 units
 
-**Acceptance:** ✅ login + RLS landlocked — user org A tak bisa baca data org B.
-**Extra:** account demo `admin@demo.fleet.app` / `demoFleet@2026` → org Demo Rental A (3 unit).
+**Acceptance:** ✅ login + RLS landlocked — org A user can't read org B data.
+**Extra:** demo account `admin@demo.fleet.app` / `demoFleet@2026` → org Demo Rental A (3 units).
 
-## Selasa, 15 Sep — Asset CRUD + QR (M2) ✅ SELESAI
+## Tue, Sep 15 — Asset CRUD + QR (M2) ✅ DONE
 
-- [x] Halaman asset list + form new asset (name, unit_no, category, hm_initial) — **server actions + validasi**
-- [x] Detail unit: informasi + tombol QR — **status chip due/overdue, riwayat servis, total biaya**
-- [x] Generate QR render `<canvas>` + download PNG ≥512px — **`QRPanel` 512×512**
-- [x] Halaman scan: `html5-qrcode` kamera + fallback input ID manual
-- [x] Navigasi scan → `/assets/[id]` — **parse `/assets/<uuid>`**
-- [x] Layout dashboard shell (header, badge notif, nav) — **route group `(app)`, badge dari count notif**
+- [x] Asset list page + new asset form (name, unit_no, category, hm_initial) — **server actions + validation**
+- [x] Unit detail: info + QR button — **due/overdue status chip, service history, total cost**
+- [x] QR render as `<canvas>` + download PNG ≥512px — **`QRPanel` 512×512**
+- [x] Scan page: `html5-qrcode` camera + manual ID input fallback
+- [x] Scan navigation → `/assets/[id]` — **parses `/assets/<uuid>`**
+- [x] Dashboard shell layout (header, notif badge, nav) — **route group `(app)`, badge from notif count**
 
-**Acceptance:** buat unit → QR tampil → print/nedus PNG. Scan kamera → buka unit ≤3s.
+**Acceptance:** create unit → QR appears → print/PNG download. Camera scan → open unit ≤3s.
 
-## Rabu, 16 Sep — Maintenance Log + Foto (M3) ✅ SELESAI + EVALUASI
+## Wed, Sep 16 — Maintenance Log + Photos (M3)
 
-- [x] Form tambah log: jenis, HM, biaya, catatan (mobile-first)
-- [x] Upload foto → Storage bucket `fotos`, path `{org_id}/{log_id}/{uuid}` — bucket/policy dibuat via Dashboard UI (SQL editor nggak bisa: `postgres` non-owner storage) + verified live (upload 200, anon denied, signed URL 200)
-- [x] Transaksi: insert log + photos, update `next_due_hm` & `next_due_date`
-- [x] Riwayat per unit + total biaya, thumbnail foto
-- [x] Validasi: HM mundur dilarang, biaya ≥ 0, required fields
-- [x] Evaluasi menyeluruh (`0004_rbac_cleanup`): RBAC admin/operator, cleanup foto unit dihapus, method notif, a11y, boundaries — **semua verified live**
+- [x] Add-log form: type, HM, cost, notes (mobile-first)
+- [x] Photo upload → Storage bucket `fotos`, path `{org_id}/{log_id}/{uuid}` — bucket/policies created via Dashboard UI (SQL editor can't: `postgres` non-owner of storage) + verified live (upload 200, anon denied, signed URL 200)
+- [x] Transaction: insert log + photos, update `next_due_hm` & `next_due_date`
+- [x] Per-unit history + total cost, photo thumbnails
+- [x] Validation: backward HM rejected, cost ≥ 0, required fields
 
-**Acceptance:** simpan log → total biaya & next_due terupdate otomatis, foto muncul.
+**Acceptance:** save log → total cost & next_due auto-updated, photos appear.
 
-## Kamis, 17 Sep — Dashboard + Notifikasi (M4)
+## Thu, Sep 17 — Dashboard + Notifications (M4)
 
-- [ ] Dashboard fleet: tab Semua/Due/Overdue, status warna
-- [ ] Ringkasan: jumlah unit, unit overdue, Σ biaya bulan ini, top biaya
+- [ ] Fleet dashboard: All/Due/Overdue tabs, status colors
+- [ ] Summary: unit count, overdue units, Σ cost this month, top costs
 - [ ] Vercel Cron `/api/cron/due` (daily 07:00 WIB) → insert notifications
-- [ ] Badge notif + halaman notifikasi, mark-read
-- [ ] Idempotent cron (no duplikat hari sama); proteksi bearer token
+- [ ] Notif badge + notifications page, mark-read
+- [ ] Idempotent cron (no dupes same day); bearer-token protection
 
-**Acceptance:** unit melewati due → 24 jam kemudian muncul notif + badge.
+**Acceptance:** unit passes due → 24h later notification + badge appears.
 
-## Jumat, 18 Sep — Export, Polish, Deploy (M5)
+## Fri, Sep 18 — Export, Polish, Deploy (M5)
 
-- [ ] `/api/assets/[id]/export` → CSV biaya per unit (kolom + total row)
-- [ ] Error boundary, loading state, empty state (belum ada data)
-- [ ] Aksesibilitas check (label, kontras, tombol 44px), responsive <375px
-- [ ] Deploy Vercel; verifikasi env var; seed data demo bisa diakses
-- [ ] Persiapkan folder root utk Vercel (project bukan di folder root repo) + tadahkan path
-- [ ] Smoke test penuh alur: register → unit → QR → scan → log → notif → export
+- [ ] `/api/assets/[id]/export` → per-unit CSV cost (columns + total row)
+- [ ] Error boundary, loading state, empty state (no data yet)
+- [ ] Accessibility check (labels, contrast, 44px buttons), responsive <375px
+- [ ] Deploy to Vercel; verify env vars; demo seed data accessible
+- [ ] Prepare repo root for Vercel (project not in repo root folder) + point the path
+- [ ] Full smoke test: register → unit → QR → scan → log → notif → export
 
-**Acceptance:** buka Vercel URL, jalankan alur end-to-end tanpa error.
+**Acceptance:** open Vercel URL, run end-to-end flow without errors.
 
 ---
 
-## Risiko & Mitigasi
+## Risks & Mitigation
 
-| Risiko | Mitigasi |
+| Risk | Mitigation |
 |---|---|
-| QR scan bermasalah di HP tertentu | Fallback input manual; test di 2 browser |
-| RLS salah konfig → bocor data antar org | Uji cross-org login tiap selesai schema; RLS jadi tembok utama |
-| Cron Vercel Free Tier delay | Notif boleh telat 1 jam utk MVP; bukan critical path |
-| Deadline mepet | Scope dipecah harian; hari Jumat mosong untuk buffer — kalau Kamis telat, Jumat fokus M4 & pangkas polish |
-| Monorepo path utk deploy Vercel | Siapkan sejak Senin: Vercel root = subfolder project |
+| QR scan fails on certain phones | Manual input fallback; test on 2 browsers |
+| Misconfigured RLS → cross-org data leak | Cross-org login test after every schema change; RLS is the main wall |
+| Vercel Free Tier cron delay | Notifs may be 1h late for MVP; not critical path |
+| Tight deadline | Scope split daily; Friday kept empty as buffer — if Thursday slips, Friday focuses M4 & trims polish |
+| Monorepo path for Vercel deploy | Prepared since Monday: Vercel root = project subfolder |
 
 ## Buffer
 
-Jumat pagi dianggap hari buffer: target finish Kamis sore. Jumat = demo & fix bug kecil, bukan ngejar fitur baru.
+Friday morning is the buffer day: target done by Thursday evening. Friday = demo & small bug fixes, not chasing new features.

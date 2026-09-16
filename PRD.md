@@ -1,87 +1,87 @@
-# PRD — Fleet / Asset Maintenance Log (Rental Alat Berat)
+# PRD — Fleet / Asset Maintenance Log (Heavy Equipment Rental)
 
 ## 1. Problem Statement
 
-Perusahaan rental alat berat mencatat servis & perbaikan unit pakai buku, Excel, atau catatan pribadi mekanik. Akibatnya:
+Heavy equipment rental companies track unit service & repairs in paper logs, Excel, or mechanics' personal notes. Consequences:
 
-- Servis tertunda → downtime unit, unit rusak, klien komplain.
-- Riwayat perbaikan tiap unit tidak terpusat → kesulitan nilai jual unit.
-- Total biaya maintenance per unit tidak terhitung → harga sewa & keputusan jual/ganti aset tidak data-driven.
-- Packing dokumentasi serah terima unit ke klien ribet.
+- Servicing delayed → unit downtime, unit breakdowns, client complaints.
+- Per-unit repair history is not centralized → hard to value a unit for resale.
+- Total maintenance cost per unit not tracked → rental pricing and sell/replace decisions are not data-driven.
+- Handover documentation to clients is tedious to assemble.
 
 ## 2. Persona
 
-| Persona | Deskripsi | Kebutuhan utama |
+| Persona | Description | Core needs |
 |---|---|---|
-| **Admin Rental** | Owner/manager rental alat berat. Lapangan & kantor. | Pantau status semua unit, biaya TCO, pengingat servis, rekap buat bos/laporan |
-| **Operator / Mekanik** | Orang yang ngecek & servis unit di lapangan. HP doang. | Cepat catat servis pas di unit, pindai QR, upload foto kerusakan |
+| **Rental Admin** | Owner/manager of heavy equipment rental. Works in field & office. | Monitor all unit status, TCO costs, service reminders, reports for boss/stakeholders |
+| **Operator / Mechanic** | Person who inspects & services units in the field. Phone only. | Quickly log service at the unit, scan QR, upload damage photos |
 
-## 3. Use Case Utama
+## 3. Key Use Cases
 
-1. **UC-01 Daftarkan unit baru** — admin input unit (nama, no unit, kategori, HM awal), sistem generate QR.
-2. **UC-02 Catat maintenance** — mekanik scan QR → halaman unit → isi log: jenis (rutin/perbaikan), HM, biaya, catatan, foto.
-3. **UC-03 Pantau fleet** — admin lihat dashboard: unit due/overdue servis, total biaya per unit/kategori.
-4. **UC-04 Dapat reminder** — sistem kasih notif in-app saat unit mendekati/menembus jadwal servis.
-5. **UC-05 Export biaya** — export CSV biaya per unit untuk rekap.
+1. **UC-01 Register new unit** — admin inputs unit (name, unit no, category, initial HM), system generates QR.
+2. **UC-02 Log maintenance** — mechanic scans QR → unit page → fills log: type (routine/repair), HM, cost, notes, photos.
+3. **UC-03 Monitor fleet** — admin views dashboard: units due/overdue for service, total cost per unit/category.
+4. **UC-04 Get reminders** — system shows in-app notification when a unit approaches/passes its service schedule.
+5. **UC-05 Export costs** — CSV export of per-unit costs for reporting.
 
-## 4. Scope MVP
+## 4. MVP Scope
 
-### 4.1 Fitur In-Scope
+### 4.1 Features In-Scope
 
-| # | Fitur | Penerima |
+| # | Feature | Recipients |
 |---|---|---|
-| F1 | Auth Supabase, role **admin** + **operator**. Register bebas = self-serve: bikin org baru + jadi admin org itu (operator dibuat admin via invite/SQL) | Admin, Operator |
-| F2 | CRUD asset: nama, no unit, kategori (excavator/loader/dll), HM awal | Admin |
-| F3 | Generate QR per unit, cetak/simpan sebagai PNG | Admin |
-| F4 | Scan QR via kamera (desktop + mobile browser) → buka halaman unit | Operator |
-| F5 | Create maintenance log: jenis, HM saat servis, biaya, catatan, upload foto (1+/log) | Operator, Admin |
-| F6 | Auto-update `next_due_hm` + `next_due_date` dari interval terakhir per log | Sistem |
-| F7 | Dashboard fleet: status due/overdue, total biaya per unit + kategori | Admin |
-| F8 | Riwayat maintenance per unit (list + total biaya) | Admin, Operator |
-| F9 | Notifikasi in-app (badge + list) hasil Vercel Cron | Admin |
-| F10 | Export CSV biaya per unit | Admin |
+| F1 | Supabase auth, **admin** + **operator** roles. Free registration = self-serve: creates new org + becomes that org's admin (operators created by admin via invite/SQL) | Admin, Operator |
+| F2 | Asset CRUD: name, unit no, category (excavator/loader/etc), initial HM | Admin |
+| F3 | Per-unit QR generation, print/save as PNG | Admin |
+| F4 | QR scan via camera (desktop + mobile browser) → opens unit page | Operator |
+| F5 | Create maintenance log: type, HM at service, cost, notes, photo upload (1+/log) | Operator, Admin |
+| F6 | Auto-update `next_due_hm` + `next_due_date` from the interval of the last log per asset | System |
+| F7 | Fleet dashboard: due/overdue status, total cost per unit + category | Admin |
+| F8 | Per-unit maintenance history (list + total cost) | Admin, Operator |
+| F9 | In-app notifications (badge + list) from Vercel Cron | Admin |
+| F10 | CSV export of per-unit costs | Admin |
 
-### 4.2 Anti-Goals (SKIP di MVP)
+### 4.2 Anti-Goals (SKIPPED in MVP)
 
-- Email/WhatsApp reminder (butuh external key). → `ponytail: in-app dulu, mail ketika ada user beneran`
-- PWA penuh / offline sync. Scan kamera tetep jalan di browser HP.
-- QR dengan token aman. MVP QR berisi ID unit aja.
-- Multi-lokasi/cabang.
-- Integrasi akuntansi / invoicing.
-- Approval flow maintenance.
-- Dashboard realtime (cukup refresh manual).
+- Email/WhatsApp reminders (needs external keys). → `ponytail: in-app first, email when there are real users`
+- Full PWA / offline sync. Camera scanning still works in mobile browsers.
+- Secure QR tokens. MVP QR just carries the unit ID.
+- Multi-location/branch.
+- Accounting / invoicing integration.
+- Maintenance approval flow.
+- Realtime dashboard (manual refresh is enough).
 
 ## 5. Acceptance Criteria
 
-- **A1 (Auth):** Register bebas → langsung jadi admin org baru (org terisolasi otomatis). Admin bisa set role operator via SQL. Test: user org B login → ngga bisa baca data org A (RLS enforced).
-- **A2 (Asset):** Admin bikin unit → QR muncul ≥ 1 detik, bisa di-download PNG resolusi cetak (≥ 512px).
-- **A4 (Scan):** Scan QR dari kamera HP → buka `/assets/[id]` ≤ 3 detik.
-- **A5 (Log):** Simpan log → muncul di riwayat, total biaya unit keupdate, `next_due` ter-hitung otomatis. Foto sukses upload ke Storage.
-- **A7 (Dashboard):** Unit yang `next_due_date <= hari ini` muncul di tab overdue ≤ 1 menit setelah log lama disimpan.
-- **A9 (Notif):** Cron daily → insert notifikasi untuk unit due/overdue dalam X hari; badge kelihatan di header.
-- **A10 (CSV):** Export → file `biaya-{unit}.csv` kolom: tanggal, jenis, HM, biaya, catatan; total di row terakhir.
+- **A1 (Auth):** Free registration → immediately admin of a new org (org auto-isolated). Admin can set operator role via SQL. Test: user from org B logs in → cannot read org A data (RLS enforced).
+- **A2 (Asset):** Admin creates unit → QR appears in ≥ 1 second, downloadable as print-resolution PNG (≥ 512px).
+- **A4 (Scan):** Scanning QR from a phone camera → opens `/assets/[id]` in ≤ 3 seconds.
+- **A5 (Log):** Saving a log → appears in history, unit total cost updates, `next_due` auto-computed. Photos upload to Storage successfully.
+- **A7 (Dashboard):** Units with `next_due_date <= today` appear in the overdue tab ≤ 1 minute after an old log is saved.
+- **A9 (Notif):** Daily cron → inserts notifications for units due/overdue within X days; badge visible in header.
+- **A10 (CSV):** Export → file `cost-{unit}.csv` columns: date, type, HM, cost, notes; total on last row.
 
 ## 6. Non-Functional
 
-- **Stack:** Next.js (App Router) + Vercel + Supabase (Postgres, Auth, Storage, Edge/Cron). Semua di Free Tier.
-- **Multi-tenant:** isolasi 100% via RLS per `organization_id`; service role tidak pernah dipakai di client.
-- **Mobile-first:** halaman scan & form log usable di layar ≤ 375px, tanpa horizontal scroll.
-- **Performance:** dashboard fleet load < 2s (data < 10rb log).
-- **Keamanan:** semua key server-side; client cuma pakai anon key + RLS.
-- **Observability:** 1 log `console.error` path jelas; error boundary tiap route grup.
+- **Stack:** Next.js (App Router) + Vercel + Supabase (Postgres, Auth, Storage, Edge/Cron). Everything on Free Tier.
+- **Multi-tenant:** 100% isolation via RLS per `organization_id`; service role never used on the client.
+- **Mobile-first:** scan page & log form usable on screens ≤ 375px, no horizontal scroll.
+- **Performance:** fleet dashboard loads < 2s (data < 10k logs).
+- **Security:** all keys server-side; client only uses anon key + RLS.
+- **Observability:** 1 clear-path `console.error` log; error boundary per route group.
 
-## 7. Data Domain & Map Ke Dokumen Ide
+## 7. Data Domain & Mapping to Idea Document
 
-Ganti "kendaraan/km" jadi "unit alat berat / HM (jam meter)" sesuai pilihan user.
+Replaced "vehicle/km" with "equipment unit / HM (hour meter)" per user's choice.
 
-- `assets`: no unit, nama, kategori, **hm_initial**, **next_due_hm**, **next_due_date**, org FK.
-- `maintenance_logs`: jenis (rutin/perbaikan), **hm**, biaya, catatan, asset FK, author FK.
+- `assets`: unit no, name, category, **hm_initial**, **next_due_hm**, **next_due_date**, org FK.
+- `maintenance_logs`: type (routine/repair), **hm**, cost, notes, asset FK, author FK.
 - `photos`: storage path, log FK.
-- `notifications`: user FK, pesan, read flag.
+- `notifications`: user FK, message, read flag.
 
-## 8. Success Metrics (Hipotesis, belum divalidasi)
+## 8. Success Metrics (Hypothesis, not yet validated)
 
-- ≤ 60 detik untuk catat satu maintenance (waktu admin/operator).
-- 100% unit punya QR tercetak dalam 1 minggu adopsi.
-- 1 hitungan TCO per unit per bulan tanpa Excel.
-- Pricing hipotesis: Rp50–100rb/unit/bulan (dari dokumen ide) — validasi dengan 5 calon user.
+- ≤ 60 seconds to log one maintenance event (admin/operator time).
+- 100% of units have a printed QR within 1 week of adoption.
+- 1 TCO calculation per unit per month without Excel.
+- Pricing hypothesis: Rp50–100k/unit/month (from the idea document) — validate with 5 prospective users.
