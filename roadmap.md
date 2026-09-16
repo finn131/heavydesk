@@ -28,17 +28,15 @@ Milestone besar: M1 Auth+schema → M2 Asset+QR → M3 Maintenance → M4 Dashbo
 - [x] Navigasi scan → `/assets/[id]` — **parse `/assets/<uuid>`**
 - [x] Layout dashboard shell (header, badge notif, nav) — **route group `(app)`, badge dari count notif**
 
-**Acceptance:** buat unit → QR tampil → print/nedus PNG. Scan kamera → langsung ke detail unit.
-
-**Acceptance:** buat unit → QR tampil → scan dari HP → buka unit ≤3s.
+**Acceptance:** buat unit → QR tampil → print/nedus PNG. Scan kamera → buka unit ≤3s.
 
 ## Rabu, 16 Sep — Maintenance Log + Foto (M3)
 
-- [ ] Form tambah log: jenis, HM, biaya, catatan (mobile-first)
+- [x] Form tambah log: jenis, HM, biaya, catatan (mobile-first)
 - [ ] Upload foto → Storage bucket `fotos`, path `{org_id}/{log_id}/{uuid}`
-- [ ] Transaksi: insert log + photos, update `next_due_hm` & `next_due_date`
-- [ ] Riwayat per unit + total biaya, thumbnail foto
-- [ ] Validasi: HM mundur dilarang, biaya ≥ 0, required fields
+- [x] Transaksi: insert log + photos, update `next_due_hm` & `next_due_date`
+- [x] Riwayat per unit + total biaya, thumbnail foto
+- [x] Validasi: HM mundur dilarang, biaya ≥ 0, required fields
 
 **Acceptance:** simpan log → total biaya & next_due terupdate otomatis, foto muncul.
 

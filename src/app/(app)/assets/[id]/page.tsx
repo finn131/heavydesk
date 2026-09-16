@@ -1,10 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, SquarePen } from "lucide-react";
+import { ArrowLeft, SquarePen, Plus, Wrench } from "lucide-react";
 import QRPanel from "@/components/QRPanel";
 import DeleteAssetButton from "@/components/DeleteAssetButton";
-import { dueStatus, STATUS_LABEL, STATUS_STYLE } from "@/lib/status";
+import { dueStatusHm, STATUS_LABEL, STATUS_STYLE } from "@/lib/status";
 import { deleteAssetAction } from "../actions";
 import { rupiah } from "@/lib/format";
 
@@ -15,8 +15,17 @@ type Asset = {
   unit_no: string;
   category: string | null;
   hm_initial: number | null;
-  hm_current: number | null;
+  next_due_hm: number | null;
   next_due_date: string | null;
+};
+type LogRow = {
+  id: string;
+  created_at: string;
+  log_type: string;
+  hm: number | null;
+  cost: number | null;
+  notes: string | null;
+  photos: { storage_path: string }[] | null;
 };
 
 export default async function AssetDetailPage({ params }: Props) {
@@ -31,29 +40,46 @@ export default async function AssetDetailPage({ params }: Props) {
   const [assetRaw, logsRaw] = await Promise.all([
     supabase
       .from("assets")
-      .select("id, name, unit_no, category, hm_initial, hm_current, next_due_date, created_at")
+      .select("id, name, unit_no, category, hm_initial, next_due_hm, next_due_date")
       .eq("id", id)
       .single(),
     supabase
       .from("maintenance_logs")
-      .select("service_date, description, cost")
+      .select("id, created_at, log_type, hm, cost, notes, photos(storage_path)")
       .eq("asset_id", id)
-      .order("service_date", { ascending: false }),
+      .order("created_at", { ascending: false }),
   ]);
 
   const asset = assetRaw.data as Asset | null;
   if (!asset) redirect("/assets");
 
-  const logs = (logsRaw.data ?? []) as { service_date: string; description: string; cost: number | null }[];
+  const logs = (logsRaw.data ?? []) as LogRow[];
   const totalCost = logs.reduce((sum, l) => sum + (l.cost ?? 0), 0);
-  const st = dueStatus(asset.next_due_date);
+  const currentHm = logs.find((l) => l.hm != null)?.hm ?? asset.hm_initial ?? 0;
+  const st = dueStatusHm(asset.next_due_date, asset.next_due_hm, currentHm);
+
+  const photoPaths = logs.flatMap((l) => l.photos ?? []);
+  const signed: Record<string, string> = {};
+  for (const p of photoPaths) {
+    const { data } = await supabase.storage.from("fotos").createSignedUrl(p.storage_path, 3600);
+    if (data) signed[p.storage_path] = data.signedUrl;
+  }
 
   return (
     <div className="space-y-4">
-      <Link href="/assets" className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700">
-        <ArrowLeft className="h-4 w-4" />
-        Kembali
-      </Link>
+      <div className="flex items-center justify-between">
+        <Link href="/assets" className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700">
+          <ArrowLeft className="h-4 w-4" />
+          Kembali
+        </Link>
+        <Link
+          href={`/assets/${asset.id}/log/new`}
+          className="flex items-center gap-1 rounded-lg bg-slate-800 px-3 py-2 text-sm font-medium text-white hover:bg-slate-700"
+        >
+          <Plus className="h-4 w-4" />
+          Catat Servis
+        </Link>
+      </div>
 
       <div className="flex items-start justify-between rounded-xl bg-white p-5 shadow-sm">
         <div>
@@ -72,11 +98,14 @@ export default async function AssetDetailPage({ params }: Props) {
             </div>
             <div>
               <dt className="text-xs text-slate-500">Jam meter</dt>
-              <dd className="text-slate-800">{(asset.hm_current ?? asset.hm_initial ?? 0).toLocaleString("id-ID")} HM</dd>
+              <dd className="text-slate-800">{currentHm.toLocaleString("id-ID")} HM</dd>
             </div>
             <div>
               <dt className="text-xs text-slate-500">Jadwal servis</dt>
-              <dd className="text-slate-800">{asset.next_due_date ?? "belum"}</dd>
+              <dd className="text-slate-800">
+                {asset.next_due_date ?? "belum"}
+                {asset.next_due_hm != null && ` · ${asset.next_due_hm.toLocaleString("id-ID")} HM`}
+              </dd>
             </div>
             <div>
               <dt className="text-xs text-slate-500">Total biaya servis</dt>
@@ -102,22 +131,49 @@ export default async function AssetDetailPage({ params }: Props) {
         <DeleteAssetButton action={deleteAssetAction.bind(null, asset.id)} />
       </div>
 
-      {logs.length > 0 && (
-        <div className="rounded-xl bg-white p-5 shadow-sm">
-          <h2 className="mb-3 text-sm font-semibold text-slate-800">Riwayat Servis</h2>
-          <ul className="space-y-2 text-sm">
-            {logs.map((l, i) => (
-              <li key={i} className="flex items-center justify-between border-b border-slate-100 pb-2 last:border-0">
-                <div>
-                  <div className="font-medium text-slate-800">{l.description || "Servis"}</div>
-                  <div className="text-xs text-slate-500">{l.service_date}</div>
+      <div className="rounded-xl bg-white p-5 shadow-sm" id="riwayat">
+        <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-800">
+          <Wrench className="h-4 w-4 text-slate-400" />
+          Riwayat Servis
+        </h2>
+        {logs.length === 0 ? (
+          <p className="text-sm text-slate-500">Belum ada riwayat servis.</p>
+        ) : (
+          <ul className="space-y-3 text-sm">
+            {logs.map((l) => (
+              <li key={l.id} className="border-b border-slate-100 pb-3 last:border-0">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <span className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+                      {l.log_type === "perbaikan" ? "Perbaikan" : "Rutin"}
+                    </span>
+                    <div className="mt-1 font-medium text-slate-800">{l.notes || "Servis"}</div>
+                    <div className="text-xs text-slate-500">
+                      {l.created_at.slice(0, 10)} · {l.hm != null ? `${l.hm.toLocaleString("id-ID")} HM` : "HM —"}
+                    </div>
+                  </div>
+                  <span className="whitespace-nowrap font-medium text-slate-800">{rupiah(l.cost ?? 0)}</span>
                 </div>
-                <span className="text-slate-800">{rupiah(l.cost ?? 0)}</span>
+                {l.photos && l.photos.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {l.photos.map((p) =>
+                      signed[p.storage_path] ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          key={p.storage_path}
+                          src={signed[p.storage_path]}
+                          alt="Foto servis"
+                          className="h-20 w-20 rounded-lg object-cover"
+                        />
+                      ) : null,
+                    )}
+                  </div>
+                )}
               </li>
             ))}
           </ul>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

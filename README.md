@@ -41,4 +41,6 @@ Buka `http://localhost:3000`.
 ## Status
 
 **M1 selesai (Senin, 14 Sep):** scaffold, schema+RLS, auth, isolasi org verified.
-**M2 (Selasa):** asset CRUD + QR + scan.
+**M2 selesai (Selasa, 15 Sep):** asset CRUD + QR generate/download, scan kamera + fallback manual, app shell.
+
+**Status (Rabu, 16 Sep):** maintenance log + foto (M3) — form + log + next_due auto done; foto nunggu storage bucket (SQL dashboard).

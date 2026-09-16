@@ -13,6 +13,14 @@ export function dueStatus(nextDueDate: string | null | undefined): DueStatus {
   return "ok";
 }
 
+export function dueStatusHm(nextDueDate: string | null | undefined, nextDueHm: number | null | undefined, currentHm: number | null | undefined): DueStatus {
+  if (!nextDueDate) {
+    if (nextDueHm != null && currentHm != null) return currentHm >= nextDueHm ? "overdue" : "ok";
+    return "none";
+  }
+  return dueStatus(nextDueDate);
+}
+
 export const STATUS_LABEL: Record<DueStatus, string> = {
   ok: "Aman",
   due: "Menjelang due",
