@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, SquarePen, Plus, Wrench } from "lucide-react";
+import { ArrowLeft, SquarePen, Plus, Wrench, Download } from "lucide-react";
 import QRPanel from "@/components/QRPanel";
 import DeleteAssetButton from "@/components/DeleteAssetButton";
 import { dueStatusHm, STATUS_LABEL, STATUS_STYLE } from "@/lib/status";
@@ -72,13 +72,22 @@ export default async function AssetDetailPage({ params }: Props) {
           <ArrowLeft className="h-4 w-4" />
           Kembali
         </Link>
-        <Link
-          href={`/assets/${asset.id}/log/new`}
-          className="flex min-h-11 items-center gap-1 rounded-lg bg-slate-800 px-3 text-sm font-medium text-white hover:bg-slate-700"
-        >
-          <Plus className="h-4 w-4" />
-          Catat Servis
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href={`/api/assets/${asset.id}/export`}
+            className="flex min-h-11 items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            <Download className="h-4 w-4" />
+            Export CSV
+          </Link>
+          <Link
+            href={`/assets/${asset.id}/log/new`}
+            className="flex min-h-11 items-center gap-1 rounded-lg bg-slate-800 px-3 text-sm font-medium text-white hover:bg-slate-700"
+          >
+            <Plus className="h-4 w-4" />
+            Catat Servis
+          </Link>
+        </div>
       </div>
 
       <div className="flex items-start justify-between rounded-xl bg-white p-5 shadow-sm">
