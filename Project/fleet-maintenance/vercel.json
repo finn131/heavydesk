@@ -1,4 +1,5 @@
 {
+  "installCommand": "npm install",
   "buildCommand": "next build",
   "crons": [
     { "path": "/api/cron/due", "schedule": "0 0 * * *" }
