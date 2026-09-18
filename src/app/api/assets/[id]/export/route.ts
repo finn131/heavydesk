@@ -4,7 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 
 function csvField(v: string | number | null | undefined): string {
-  const s = String(v ?? "");
+  let s = String(v ?? "");
+  if (/^[=+\-@]/.test(s)) s = `'${s}`;
   return /[\s,"\n]/.test(s) ? `"${s.replaceAll('"', '""')}"` : s;
 }
 
