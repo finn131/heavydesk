@@ -54,6 +54,7 @@ Server-only keys (`SUPABASE_SERVICE_ROLE_KEY`, `VERCEL_CRON_SECRET`) must be set
 - Session-guarded (`401` when not logged in), RLS-scoped to your org.
 - UTF-8 with BOM, `Content-Disposition: attachment; filename="<unit_no>-maintenance.csv"`.
 - Columns: `Tanggal, Jenis, HM, Biaya, Catatan` (Excel-friendly).
+- Cells starting with `=`, `+`, `-`, or `@` are neutralized with a leading `'` (CSV formula injection guard).
 
 Trigger: **Export CSV** button on the asset detail page.
 
@@ -73,6 +74,6 @@ Trigger: **Export CSV** button on the asset detail page.
 | **M2 — Asset CRUD + QR** (Tue, Sep 15) | ✅ CRUD, QR generate/download, camera scan + manual fallback, app shell |
 | **M3 — Maintenance Log + Photos** (Wed, Sep 16) | ✅ log form + tx (auto `next_due`), history+thumbnails, HM validation, storage bucket `fotos`; RBAC cleanup (`0004_rbac_cleanup`) |
 | **M4 — Dashboard + Notifications** (Thu, Sep 17) | ✅ All/Due/Overdue tabs, Σ cost + top costs, Vercel Cron `/api/cron/due`, badge + notifications page, idempotent + bearer-guarded — **verified live** |
-| **M5 — Export + Deploy** (Thu, Sep 17) | ✅ CSV export, deployed to Vercel (https://heavydesk.vercel.app), smoke-tested live: login, dashboard tabs, cron (`inserted:2` → idempotent `0`), CSV download |
+| **M5 — Export + Deploy** (Thu, Sep 17) | ✅ CSV export, deployed to Vercel (https://heavydesk.vercel.app), smoke-tested live: login, dashboard tabs, cron (`inserted:2` → idempotent `0`), CSV download. Security hardening (Sep 18): CSV formula injection guard + admin self-demote lockout trigger (`0005_fix_admin_lockout`), verified live on prod |
 
 Friday (Sep 18) = demo + polish buffer.
